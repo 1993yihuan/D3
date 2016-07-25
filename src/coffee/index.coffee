@@ -1,5 +1,6 @@
  $ ->
     body = d3.select("body");
+    color = d3.scale.category20();
     #datum()
     datumF = () ->
         p = body.selectAll("p");
@@ -109,9 +110,7 @@
             .attr("y",(d)->
                 return yScale(d);
             )
-            .attr("dx",()->
-                return (xScale.rangeBand() - rectPadding)/2;
-            )
+
             .attr("dy",(d)->
                 return 20;
             )
@@ -119,7 +118,11 @@
             .attr("fill","#fff")
             .text((d)->
                 return d;
+            )
+            .attr("dx",()->
+                return (xScale.rangeBand() - rectPadding)/2;
             );
+
         svg.append("g")
           .attr("class","axis yaxis" )
           .call(yAxis);
@@ -130,3 +133,248 @@
         $('.yaxis').find('g:first').hide();
         true
     svgB();
+    #饼状图
+    svgPie = ()->
+        #定义数据
+        pieData = {
+            dataset:[ 20 , 10 , 43 , 55 , 13 ],
+        };
+        pie = d3.layout.pie();
+        piesvg = pie(pieData.dataset);
+
+        #定义生成器
+        outerRadius = 150;
+        innerRadius = 0;
+        arc = d3.svg.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius);
+
+        #添加元素
+        svg = d3.select(".svgPie").append('svg').attr('height','400').attr('width','400');
+        arcs = svg.selectAll("g")
+            .data(piesvg)
+            .enter()
+            .append("g")
+            .on('mouseover',()->
+                $(this).css('opacity',1)
+            )
+            .on('mouseout',()->
+                $(this).css('opacity',0.6)
+            )
+            .style('opacity',0.6)
+            .attr("transform","translate(150,150)");
+
+        arcs.append("path")
+            .attr("fill",(d,i)->
+                return color(i);
+            )
+            .attr("d",(d)->
+                return arc(d);
+            );
+        arcs.append("text")
+            .attr("transform",(d)->
+                return "translate(" + arc.centroid(d) + ")";
+            )
+            .attr("text-anchor","middle")
+            .text((d)->
+                return d.data;
+            );
+        true
+    svgPie();
+    # 力导向图
+    svgForce = ()->
+        #定义数据
+        forceData = {
+            nodes : [ { name: "桂林" }, { name: "广州" },
+                      { name: "厦门" }, { name: "杭州" },
+                      { name: "上海" }, { name: "青岛" },
+                      { name: "天津" }
+                    ],
+            edges : [ { source : 0 , target: 1 } , { source : 0 , target: 2 } ,
+                      { source : 0 , target: 3 } , { source : 0 , target: 4 } ,
+                      { source : 0 , target: 5 } , { source : 5 , target: 6 }, { source : 6 , target: 0 }
+                    ]
+        };
+
+        #定义生成器
+        svg = d3.select(".svgForce").append('svg').attr('height','500').attr('width','100%');
+
+        force = d3.layout.force()
+            .nodes(forceData.nodes)
+            .links(forceData.edges)
+            .size([500,500])
+            .linkDistance(150)
+            .charge([-1000]);
+        force.start();
+
+        #绘图
+        svg_edges = svg.selectAll("line")
+            .data(forceData.edges)
+            .enter()
+            .append("line")
+            .style("stroke","#ccc")
+            .style("stroke-width",1);
+
+        svg_nodes = svg.selectAll("circle")
+            .data(forceData.nodes)
+            .enter()
+            .append("circle")
+            .on('mousedown',()->
+                $(this).parent().find('circle').css('opacity',0.3);
+                $(this).parent().find('line').css('opacity',0.3);
+                $(this).css('opacity',1);
+                $(this).attr('r',30);
+                $(this).parent().find('text[data-link='+$(this).attr("text-link")+']').attr('dx',30)
+            )
+            .on('mouseup',()->
+                $(this).parent().find('circle').css('opacity',1);
+                $(this).attr('r',20);
+                $(this).parent().find('text[data-link='+$(this).attr("text-link")+']').attr('dx',20)
+            )
+            .attr("r",20)
+            .attr('text-link',(d,i)->
+                return i;
+            )
+            # .attr('data-source',(d,i)->
+            #     data = [];
+            #     for item in forceData.edges
+            #         if item.target.index is i
+            #             data.push(item.source.index)
+            #     console.log(data);
+            # )
+            .style("fill",(d,i)->
+                return color(i);
+            )
+            .call(force.drag);
+
+        svg_texts = svg.selectAll("text")
+            .data(forceData.nodes)
+            .enter()
+            .append("text")
+            .style("fill", (d,i)->
+                return color(i);
+            )
+            .attr("dx", 20)
+            .attr("dy", 8)
+            .attr('data-link',(d,i)->
+                return i;
+            )
+            .text((d)->
+               return d.name;
+            );
+        force.on("tick", ()->
+            svg_edges.attr("x1",(d)-> return d.source.x; )
+                .attr("y1",(d)-> return d.source.y; )
+                .attr("x2",(d)-> return d.target.x; )
+                .attr("y2",(d)-> return d.target.y; );
+
+            svg_nodes.attr("cx",(d)-> return d.x; )
+                .attr("cy",(d)-> return d.y; );
+
+            svg_texts.attr("x", (d)-> return d.x; )
+               .attr("y", (d)-> return d.y; );
+        );
+        true
+    svgForce();
+    # 树状图
+    svgTree = ()->
+        width = 500;
+        height = 500;
+
+        tree = d3.layout.tree()
+            .size([width, height-200])
+            .separation((a, b)->
+                return (if a.parent == b.parent then 1 else 2);
+            );
+
+        diagonal = d3.svg.diagonal()
+            .projection((d)->
+                return [d.y, d.x];
+            );
+
+        svg = d3.select(".svgTree").append("svg")
+        	.attr("width", width)
+        	.attr("height", height);
+
+
+        d3.json('city_tree.json', (error, root)->
+            nodes = tree.nodes(root);
+            links = tree.links(nodes);
+            console.log(links);
+            link = svg.selectAll(".link")
+            	.data(links)
+            	.enter()
+            	.append("path")
+            	.attr("class", "link")
+            	.attr("d", diagonal);
+
+            node = svg.selectAll(".node")
+        	    .data(nodes)
+        	    .enter()
+        	    .append("g")
+        	    .attr("class", "node")
+        	    .attr("transform", (d)->
+                    return "translate(" + d.y + "," + d.x + ")";
+                )
+            node.append("circle")
+        	    .attr("r", 4.5);
+
+            node.append("text")
+        	    .attr("dx", (d)->
+                    return  if d.children then -8 else 8;
+                )
+        	    .attr("dy", 3)
+        	    .style("text-anchor", (d)->
+                    return if d.children then "end" else "start";
+                )
+        	    .text( (d)->
+                    return d.name;
+                );
+            )
+        true
+    svgTree();
+    # 地图绘制
+    svgMap = ()->
+        width  = 1000;
+        height = 1000;
+
+        svg = d3.select(".svgMap").append("svg")
+    	    .attr("width", width)
+    	    .attr("height", height)
+    	    .append("g")
+    	    .attr("transform", "translate(0,0)");
+        projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(850)
+            .translate([width/2, height/2]);
+        path = d3.geo.path()
+            .projection(projection);
+
+        d3.json("china.geojson", (error, root)->
+            if (error)
+                return console.error(error);
+            console.log(root.features);
+            svg.selectAll("path")
+                .data( root.features )
+                .enter()
+                .append("path")
+                .attr("stroke","#000")
+                .attr("stroke-width",1)
+                .attr("fill", (d,i)->
+                    return color(i);
+                )
+                .attr("d", path )
+                .attr("text", (d,i)->
+                    return d.properties.name;
+                )
+                .on("mouseover",(d,i)->
+                        d3.select(this).attr("fill","yellow");
+                        d3.select('.mapText').text(d3.select(this).attr("text"));
+                    )
+                .on("mouseout",(d,i)->
+                    d3.select(this).attr("fill",color(i));
+                    d3.select('.mapText').text('');
+                )
+        );
+        true
+    svgMap();

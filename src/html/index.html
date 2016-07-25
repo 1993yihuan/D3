@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>D3</title>
-    <script src="../libs/d3.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="../libs/jquery.js"></script>
     <script src="../js/index.js"></script>
     <style>
+        body{
+            padding-bottom: 500px;
+        }
         .axis path,
         .axis line{
             fill: none;
@@ -21,8 +24,34 @@
         .svgB{
             padding: 20px;
         }
-        .svgB rect{
+        .svgB rect,.svgPie g,.svgForce circle{
             cursor: pointer;
+        }
+        .svgTree .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+        .svgTree .node {
+            font: 12px sans-serif;
+        }
+
+        .svgTree .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+        .svgMap{
+            position: relative;
+        }
+        .svgMap path{
+            cursor: pointer;
+        }
+        .svgMap .mapText{
+            position: absolute;
+            left: 0px;
+            top: 0px;
         }
     </style>
 </head>
@@ -36,5 +65,17 @@
     <hr>
     <div class="svgA"></div>
     <div class="svgB"></div>
+    <hr>
+    <div class="svgPie"></div>
+    <hr>
+    <div class="svgForce"></div>
+    <hr>
+    <div class="svgTree"></div>
+    <hr>
+    <div class="svgMap">
+        <div class="mapText">
+            &nbsp;
+        </div>
+    </div>
 </body>
 </html>
